@@ -13,7 +13,7 @@ void main()
 	
 	if(SolidColor.r != -1.0 && SolidColor.g != -1.0 && SolidColor.b != -1.0)
 		Fragment = vec4(SolidColor, 1);
-	else if(InvertColor > 0) {  
+	if(InvertColor > 0) {  
 		vec3 endColor = vec3(0,0,0);
 		endColor.r = 1 - Color.r;
 		endColor.g = 1 - Color.g;
