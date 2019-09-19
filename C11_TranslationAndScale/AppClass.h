@@ -14,11 +14,23 @@ Date: 2017/05
 
 class Application
 {
-	MyMesh* m_pMesh = nullptr;
 	String m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
-	MyMesh* m_pMeshArr[2]; // 46
+	MyMesh* m_pFaceArr[21];
+	MyMesh* m_pMiddleArr[4];
+	
+	vector2 m_cubePositions[21]
+	{
+		vector2(2.f, 7.f), vector2(3.f, 6.f), vector2(3.f, 5.f), vector2(2.f, 5.f), vector2(1.f, 4.f), 
+		vector2(0.f, 3.f), vector2(0.f, 2.f), vector2(0.f, 1.f), vector2(1.f, 3.f), vector2(2.f, 4.f),
+		vector2(2.f, 3.f), vector2(2.f, 2.f), vector2(2.f, 1.f), vector2(3.f, 0.f), vector2(4.f, 0.f),
+		vector2(3.f, 3.f), vector2(3.f, 2.f), vector2(4.f, 3.f), vector2(4.f, 2.f), vector2(4.f, 4.f),
+		vector2(4.f, 5.f)
+	};
 
-	vector3 m_cubePositions[2]{vector3(2.f, 7.f, 0.f), vector3(3.f, 6.f, 0.f)};
+	vector2 m_middlePositions[4]
+	{
+		vector2(5.f, 2.f), vector2(5.f, 3.f), vector2(5.f, 4.f), vector2(5.f, 5.f)
+	};
 
 private:
 	static ImGuiObject gui; //GUI object
