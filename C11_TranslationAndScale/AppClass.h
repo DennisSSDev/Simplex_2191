@@ -16,6 +16,9 @@ class Application
 {
 	MyMesh* m_pMesh = nullptr;
 	String m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	MyMesh* m_pMeshArr[2]; // 46
+
+	vector3 m_cubePositions[2]{vector3(2.f, 7.f, 0.f), vector3(3.f, 6.f, 0.f)};
 
 private:
 	static ImGuiObject gui; //GUI object

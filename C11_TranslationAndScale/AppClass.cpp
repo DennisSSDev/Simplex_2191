@@ -3,6 +3,15 @@ void Application::InitVariables(void)
 {
 	//init the mesh
 	m_pMesh = new MyMesh();
+
+	uint8_t count = 0;
+	while (count < 2) 
+	{
+		m_pMeshArr[count] = new MyMesh();
+		m_pMesh[count].GenerateCube(1.f, m_cubePositions[count]);
+		++count;
+	}
+
 	//m_pMesh->GenerateCube(1.0f, C_WHITE);
 	m_pMesh->GenerateSphere(1.0f, 5, C_WHITE);
 }
@@ -34,7 +43,12 @@ void Application::Display(void)
 	matrix4 m4Model = m4Scale * m4Translate;
 
 	m_pMesh->Render(m4Projection, m4View, m4Model);
-	
+	uint8_t count = 0;
+	while (count < 2) {
+		m_pMeshArr[count]->Render(m4Projection, m4View, glm::translate(IDENTITY_M4, m_cubePositions[count]));
+		count++;
+	}
+
 	// draw a skybox
 	m_pMeshMngr->AddSkyboxToRenderList();
 	
