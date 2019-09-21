@@ -274,11 +274,35 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 
 	Release();
 	Init();
+	const float bottom = -1.f * a_fHeight / 2.f;
+	vector3 calcVec(0.f, bottom, 0.f);
+	vector3 previous(a_fRadius, bottom, 0.f);
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	const vector3 bottomV(0.f, bottom, 0.f);
+	const vector3 topV(0.f,bottom * -1.f, 0.f);
+	const float radInc = ((360.f / a_nSubdivisions) * PI) / 180.f;
+
+	float radians = radInc;
+	uint32_t subDivCount = 0;
+
+	//generate faces
+	while (subDivCount < a_nSubdivisions)
+	{
+		calcVec.x = cos(radians) * a_fRadius;
+		calcVec.z = sin(radians) * a_fRadius;
+
+		// bottom tri
+		AddTri(bottomV, previous, calcVec);
+		
+		//tri that goes to top center
+		AddTri(calcVec, previous, topV);
+		
+		previous = calcVec;
+		radians += radInc;
+		++subDivCount;
+	}
 	// -------------------------------
-
+	
 	// Adding information about color
 	CompleteMesh(a_v3Color);
 	CompileOpenGL3X();
@@ -299,8 +323,44 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	const float bottom = -1.f * a_fHeight / 2.f;
+	
+	vector3 calcVec(0.f, bottom, 0.f);
+	vector3 previous(a_fRadius, bottom, 0.f);
+
+	const vector3 bottomCenter(0.f, bottom, 0.f);
+	const vector3 topCenter(0.f, bottom * -1.f, 0.f);
+	
+	const float radInc = ((360.f / a_nSubdivisions) * PI) / 180.f;
+
+	float radians = radInc;
+	uint32_t subDivCount = 0;
+
+	// generate faces
+	while (subDivCount < a_nSubdivisions)
+	{
+		calcVec.x = cos(radians) * a_fRadius;
+		calcVec.z = sin(radians) * a_fRadius;
+
+		// bottom tri
+		AddTri(bottomCenter, previous, calcVec);
+
+		auto topPrev = previous;
+		topPrev.y = topCenter.y;
+		
+		auto topCalcVec = calcVec;
+		topCalcVec.y = topCenter.y;
+
+		// front face
+		AddQuad(calcVec, previous, topCalcVec, topPrev);
+		
+		// top tri
+		AddTri(topCenter, topCalcVec, topPrev);
+
+		previous = calcVec;
+		radians += radInc;
+		++subDivCount;
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -329,8 +389,61 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	const float bottom = -1.f * a_fHeight / 2.f; // y
+	const float top = a_fHeight / 2.f; // y
+	
+	vector3 calcVec(0.f, bottom, 0.f);
+	vector3 previous(a_fInnerRadius, bottom, 0.f);
+
+	vector3 calcVecOuter(0.f, bottom, 0.f);
+	vector3 previousOuter(a_fOuterRadius, bottom, 0.f);
+	
+	const float radInc = ((360.f / a_nSubdivisions) * PI) / 180.f;
+
+	float radians = radInc;
+	uint32_t subDivCount = 0;
+
+	// gen faces
+	while (subDivCount < a_nSubdivisions)
+	{
+		calcVec.x = cos(radians) * a_fInnerRadius;
+		calcVec.z = sin(radians) * a_fInnerRadius;
+
+		calcVecOuter.x = cos(radians) * a_fOuterRadius;
+		calcVecOuter.z = sin(radians) * a_fOuterRadius;
+
+		// bottom face
+		AddQuad(previousOuter, calcVecOuter, previous, calcVec); 
+
+		// inner top
+		auto topPrev = previous;
+		topPrev.y = top;
+
+		auto topCalcVec = calcVec;
+		topCalcVec.y = top;
+
+		// outer top
+		auto topPrevOuter = previousOuter;
+		topPrevOuter.y = top;
+
+		auto topCalcVecOuter = calcVecOuter;
+		topCalcVecOuter.y = top;
+
+		// front face
+		AddQuad(calcVecOuter, previousOuter, topCalcVecOuter, topPrevOuter);
+
+		// inner face
+		AddQuad(previous, calcVec, topPrev, topCalcVec);
+
+		// top face
+		AddQuad(topCalcVecOuter, topPrevOuter, topCalcVec, topPrev);
+
+		previous = calcVec;
+		previousOuter = calcVecOuter;
+		
+		radians += radInc;
+		++subDivCount;
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -386,8 +499,64 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	
+	const auto vertices = new vector3[(a_nSubdivisions+1)*(a_nSubdivisions+1)];
+	uint count = 0;
+	
+	float sector = 2 * PI / a_nSubdivisions;
+	float stack = PI / a_nSubdivisions;
+	float sectorAngle = 0.f;
+	float stackAngle = 0.f;
+	
+	float posZ = 0.f;
+	float rCos = 0.f; 
+
+	// find all the verts of the sphere first
+	for(uint i = 0; i <= a_nSubdivisions; ++i)
+	{
+	    stackAngle = PI / 2 - i * stack;
+		
+	    rCos = a_fRadius * cos(stackAngle);
+	    posZ = a_fRadius * sin(stackAngle);
+
+	    for(uint j = 0; j <= a_nSubdivisions; ++j)
+	    {
+	        sectorAngle = j * sector;               
+
+	    	// collect verts based on formula 
+	        vertices[count] = vector3(rCos * cos(sectorAngle), rCos * sin(sectorAngle), posZ);
+			++count;
+	    }
+	}
+
+	uint coord1 = 0;
+	uint coord2 = 0;
+
+	// add triangles based on coordinates
+	for(uint i = 0; i < a_nSubdivisions; ++i)
+	{
+	    coord1 = i * (a_nSubdivisions + 1);
+	    coord2 = coord1 + a_nSubdivisions + 1; 
+
+	    for(uint j = 0; j < a_nSubdivisions; ++j)
+	    {
+	    	
+	        if(i != 0)
+	        {
+	        	AddTri(vertices[coord1], vertices[coord2], vertices[coord1 + 1]);
+	        }
+
+	        if(i != (a_nSubdivisions - 1)) // guaranteed to not be < 0, so uint is fine
+	        {
+	        	AddTri(vertices[coord1 + 1], vertices[coord2], vertices[coord2 + 1]);
+	        }
+	    	
+	    	++coord1;
+	    	++coord2;
+	    }
+	}
+	
+	delete[] vertices;
 	// -------------------------------
 
 	// Adding information about color
