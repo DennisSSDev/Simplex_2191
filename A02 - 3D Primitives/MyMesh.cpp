@@ -271,6 +271,7 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 		a_nSubdivisions = 3;
 	if (a_nSubdivisions > 360)
 		a_nSubdivisions = 360;
+	
 
 	Release();
 	Init();
