@@ -427,6 +427,7 @@ void Application::ProcessKeyboard(void)
 			m_qOrientation *= glm::angleAxis(-0.1f, AXIS_Y);
 		else
 			m_qOrientation *= glm::angleAxis(0.1f, AXIS_Y);
+		
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
 	{
