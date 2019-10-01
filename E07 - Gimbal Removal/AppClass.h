@@ -1,5 +1,5 @@
 /*----------------------------------------------
-Programmer: Alberto Bobadilla (labigm@gmail.com)
+Programmer: Dennis Slavinsky (dxs4043@g.rit.edu)
 Date: 2017/05
 ----------------------------------------------*/
 #ifndef __APPLICATIONCLASS_H_
@@ -18,7 +18,7 @@ class Application
 	quaternion m_qOrientation;
 	vector3 m_v3Rotation;
 	MyMesh* m_pMesh = nullptr;
-	String m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	String m_sProgrammer = "Dennis Slavinsky - dxs4043@g.rit.edu";
 
 private:
 	static ImGuiObject gui; //GUI object
