@@ -17,7 +17,8 @@ class MyCamera
 	vector3 m_v3Above = vector3(0.0f, 1.0f, 0.0f); //What is above the camera
 
 	bool m_bPerspective = true; //perspective view? False is Orthographic
-
+	bool m_isMouseDown = false;
+	
 	float m_fFOV = 45.0f; //Field of View
 
 	vector2 m_v2Resolution = vector2(1280.0f, 720.0f); //Resolution of the window
@@ -28,6 +29,12 @@ class MyCamera
 
 	matrix4 m_m4View; //View matrix
 	matrix4 m_m4Projection; //Projection Matrix
+
+	quaternion m_Orientation;
+
+	float Yaw = 0.f; // xVal
+	float Pitch = 0.f; // yVal
+	
 public:
 	/*
 	USAGE: Constructor
@@ -188,6 +195,27 @@ public:
 	*/
 	void ResetCamera(void);
 
+	/*
+	USAGE: Grabs mouse input and stores it for camera rotations
+	ARGUMENTS: the x and the y value of the mouse in the form of a 2D struct
+	OUTPUT: --
+	 */
+	void SetRotations(vector2 rotations);
+
+	/*
+	USAGE: Calculate the forward vector of the camera
+	ARGUMENTS: --
+	OUTPUT: --
+	 */
+	vector3 GetForwardVector(void) const;
+
+	/*
+	USAGE: Set the value of the boolean according to the user pressing the rotation button
+	ARGUMENTS: --
+	OUTPUT: --
+	 */
+	void SetIsMouseDown(bool value);
+	
 	/*
 	USAGE: Set the position target and up of the camera at once
 	ARGUMENTS:

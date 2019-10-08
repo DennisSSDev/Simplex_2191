@@ -65,7 +65,6 @@ void Simplex::MyCamera::Init(void)
 	ResetCamera();
 	CalculateProjectionMatrix();
 	CalculateViewMatrix();
-	//No pointers to initialize here
 }
 
 void Simplex::MyCamera::Release(void)
@@ -118,6 +117,22 @@ void Simplex::MyCamera::ResetCamera(void)
 	CalculateViewMatrix();
 }
 
+void Simplex::MyCamera::SetRotations(vector2 rotations)
+{
+	Yaw = rotations.y;
+	Pitch = rotations.x;
+}
+
+vector3 Simplex::MyCamera::GetForwardVector(void) const
+{
+	return glm::normalize(m_v3Target - m_v3Position);
+}
+
+void Simplex::MyCamera::SetIsMouseDown(bool value)
+{
+	m_isMouseDown = value;
+}
+
 void Simplex::MyCamera::SetPositionTargetAndUpward(vector3 a_v3Position, vector3 a_v3Target, vector3 a_v3Upward)
 {
 	m_v3Position = a_v3Position;
@@ -131,7 +146,26 @@ void Simplex::MyCamera::SetPositionTargetAndUpward(vector3 a_v3Position, vector3
 
 void Simplex::MyCamera::CalculateViewMatrix(void)
 {
-	//Calculate the look at most of your assignment will be reflected in this method
+	if(!m_isMouseDown)
+	{
+		Yaw = 0.f;
+		Pitch = 0.f;
+	}
+	vector3 forward = GetForwardVector();
+
+	// get a rotation around the Y axis. Since we don't roll, it's safe to grab it from the (0,1,0) axis
+	const quaternion yawRot = glm::angleAxis(Yaw, AXIS_Y);
+	const auto OrientationX = yawRot * forward;
+	m_v3Target = m_v3Position + OrientationX; // apply Yaw rotation
+
+	forward = GetForwardVector(); // the forward changed because of the previous quaternion
+
+	// If the camera turns somewhere to the left or right, AXIS_X will no longer be a valid axis to revolve around
+	// That's why asking for a perpendicular vector to the AXIS_Y and the forward is necessary
+	const quaternion pitchRot = glm::angleAxis(Pitch, glm::cross(glm::normalize(forward), AXIS_Y));
+	const auto OrientationY = forward * pitchRot;
+	m_v3Target =  m_v3Position + OrientationY; // apply Pitch rotation
+	
 	m_m4View = glm::lookAt(m_v3Position, m_v3Target, glm::normalize(m_v3Above - m_v3Position)); //position, target, upward
 }
 
@@ -152,11 +186,27 @@ void Simplex::MyCamera::CalculateProjectionMatrix(void)
 
 void MyCamera::MoveForward(float a_fDistance)
 {
-	//The following is just an example and does not take in account the forward vector (AKA view vector)
-	m_v3Position += vector3(0.0f, 0.0f,-a_fDistance);
-	m_v3Target += vector3(0.0f, 0.0f, -a_fDistance);
-	m_v3Above += vector3(0.0f, 0.0f, -a_fDistance);
+	// move based on the forward vector of the camera
+	const auto moveDir = GetForwardVector()*a_fDistance;
+	m_v3Position += moveDir;
+	m_v3Target += moveDir;
+	m_v3Above += moveDir;
 }
 
-void MyCamera::MoveVertical(float a_fDistance){}//Needs to be defined
-void MyCamera::MoveSideways(float a_fDistance){}//Needs to be defined
+void MyCamera::MoveVertical(float a_fDistance)
+{
+	const auto rightDir = glm::normalize(glm::cross(GetForwardVector(), AXIS_Y));
+	const auto moveDir = glm::normalize(glm::cross(GetForwardVector(), rightDir)) * -a_fDistance;
+	m_v3Position += moveDir;
+	m_v3Target += moveDir;
+	m_v3Above += moveDir;
+}//Needs to be defined
+
+void MyCamera::MoveSideways(float a_fDistance)
+{
+	// move based on the forwa
+	const auto moveDir = glm::normalize(glm::cross(GetForwardVector(), AXIS_Y)) * -a_fDistance;
+	m_v3Position += moveDir;
+	m_v3Target += moveDir;
+	m_v3Above += moveDir;
+}//Needs to be defined
