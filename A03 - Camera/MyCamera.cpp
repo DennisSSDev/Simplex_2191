@@ -195,18 +195,20 @@ void MyCamera::MoveForward(float a_fDistance)
 
 void MyCamera::MoveVertical(float a_fDistance)
 {
+	// first get the right vector
 	const auto rightDir = glm::normalize(glm::cross(GetForwardVector(), AXIS_Y));
+	// then get the down vector from the cross of the forward and right vector
 	const auto moveDir = glm::normalize(glm::cross(GetForwardVector(), rightDir)) * -a_fDistance;
 	m_v3Position += moveDir;
 	m_v3Target += moveDir;
 	m_v3Above += moveDir;
-}//Needs to be defined
+}
 
 void MyCamera::MoveSideways(float a_fDistance)
 {
-	// move based on the forwa
+	// move based on the forward vector cross the Y axis. This way it will retrieve the correct sideways vector 
 	const auto moveDir = glm::normalize(glm::cross(GetForwardVector(), AXIS_Y)) * -a_fDistance;
 	m_v3Position += moveDir;
 	m_v3Target += moveDir;
 	m_v3Above += moveDir;
-}//Needs to be defined
+}
