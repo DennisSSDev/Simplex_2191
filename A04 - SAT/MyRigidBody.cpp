@@ -124,6 +124,24 @@ void MyRigidBody::SetModelMatrix(matrix4 a_m4ModelMatrix)
 	//we calculate the distance between min and max vectors
 	m_v3ARBBSize = m_v3MaxG - m_v3MinG;
 }
+
+inline std::vector<vector3> Simplex::MyRigidBody::GetLocalModelAxis() const
+{
+	std::vector<vector3> local_axis;
+	// x axis
+	local_axis.push_back(glm::normalize(
+		vector3(m_m4ToWorld * vector4(AXIS_X, 0.0f))
+	));
+	// y axis
+	local_axis.push_back(glm::normalize(
+		vector3(m_m4ToWorld * vector4(AXIS_Y, 0.0f))
+	));
+	// z axis
+	local_axis.push_back(glm::normalize(
+		vector3(m_m4ToWorld * vector4(AXIS_Z, 0.0f))
+	));
+	return local_axis;
+}
 //The big 3
 MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 {
@@ -233,7 +251,7 @@ bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 	if (bColliding)
 	{
 		if(SAT(a_pOther) != eSATResults::SAT_NONE)
-			bColliding = false;// reset to false
+			bColliding = false; // reset to false
 	}
 
 	if (bColliding) //they are colliding
@@ -276,17 +294,103 @@ void MyRigidBody::AddToRenderList(void)
 
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
-	/*
-	Your code goes here instead of this comment;
+	float ra, rb;
+	matrix3 R, AbsR;
+	
+	const auto a = GetLocalModelAxis();
+	const auto b = a_pOther->GetLocalModelAxis();
+	
+	const auto halfW = GetHalfWidth();
+	const auto otherHalfW = a_pOther->GetHalfWidth();
 
-	For this method, if there is an axis that separates the two objects
-	then the return will be different than 0; 1 for any separating axis
-	is ok if you are not going for the extra credit, if you could not
-	find a separating axis you need to return 0, there is an enum in
-	Simplex that might help you [eSATResults] feel free to use it.
-	(eSATResults::SAT_NONE has a value of 0)
-	*/
+	// compute rotation matrix expressing b in a's coordinate frame
+	for (uint i = 0; i < 3; ++i)
+	{
+		for (uint j = 0; j < 3; ++j)
+		{
+			R[i][j] = glm::dot(a[i], b[j]);
+		}
+	}
 
-	//there is no axis test that separates this two objects
+	// compute translation vector t
+	vector3 t = a_pOther->GetCenterGlobal() - GetCenterGlobal();
+	
+	// the issue was here. In the book it was 0 -> 2 -> 2 but instead it should be 0 -> 1 -> 2
+	// Bring translation into a’s coordinate frame
+	t = vector3(glm::dot(t, a[0]),glm::dot(t, a[1]),glm::dot(t,a[2]));
+
+	// compute common subexpressions. Add in an epsilon term to
+	// counteract arithmetic errors when two edges are parallel and their
+	// cross product is near null
+	for (uint i = 0; i < 3; ++i)
+	{
+		for (uint j = 0; j < 3; ++j)
+		{
+			AbsR[i][j] = abs(R[i][j]) + FLT_EPSILON;
+		}
+	}
+	
+	// test axis A0, A1, A2
+	for (uint i = 0; i < 3; ++i)
+	{
+		ra = halfW[i];
+		rb = otherHalfW[0] * AbsR[i][0] + otherHalfW[1] * AbsR[i][1] + otherHalfW[2] * AbsR[i][2];
+		if (abs(t[i]) > ra + rb) return 1;
+	}
+
+	// test axis B0, B1, B2
+	for (uint i = 0; i < 3; ++i)
+	{
+		ra = halfW[0] * AbsR[0][i] + halfW[1] * AbsR[1][i] + halfW[2] * AbsR[2][i];
+		rb = otherHalfW[i];
+		if (abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) return 1;
+	}
+
+	// test axis A0 cross B0
+	ra = halfW[1] * AbsR[2][0] + halfW[2] * AbsR[1][0];
+	rb = otherHalfW[1] * AbsR[0][2] + otherHalfW[2] * AbsR[0][1];
+	if (abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return 1;
+
+	// test axis A0 cross B1
+	ra = halfW[1] * AbsR[2][1] + halfW[2] * AbsR[1][1];
+	rb = otherHalfW[0] * AbsR[0][2] + otherHalfW[2] * AbsR[0][0];
+	if (abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return 1;
+
+	// test axis A0 cross B2
+	ra = halfW[1] * AbsR[2][2] + halfW[2] * AbsR[1][2];
+	rb = otherHalfW[0] * AbsR[0][1] + otherHalfW[1] * AbsR[0][0];
+	if (abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return 1;
+
+	// test axis A1 cross B0
+	ra = halfW[0] * AbsR[2][0] + halfW[2] * AbsR[0][0];
+	rb = otherHalfW[1] * AbsR[1][2] + otherHalfW[2] * AbsR[1][1];
+	if (abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return 1;
+
+	// test axis A1 cross B1
+	ra = halfW[0] * AbsR[2][1] + halfW[2] * AbsR[0][1];
+	rb = otherHalfW[0] * AbsR[1][2] + otherHalfW[2] * AbsR[1][0];
+	if (abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return 1;
+
+	// test axis A1 cross B2
+	ra = halfW[0] * AbsR[2][2] + halfW[2] * AbsR[0][2];
+	rb = otherHalfW[0] * AbsR[1][1] + otherHalfW[1] * AbsR[1][0];
+	if (abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return 1;
+
+	// test axis A2 cross B0
+	ra = halfW[0] * AbsR[1][0] + halfW[1] * AbsR[0][0];
+	rb = otherHalfW[1] * AbsR[2][2] + otherHalfW[2] * AbsR[2][1];
+	if (abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return 1;
+
+	// test axis A2 cross B1
+	ra = halfW[0] * AbsR[1][1] + halfW[1] * AbsR[0][1];
+	rb = otherHalfW[0] * AbsR[2][2] + otherHalfW[2] * AbsR[2][0];
+	if (abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return 1;
+
+	// test axis A2 cross B2
+	ra = halfW[0] * AbsR[1][2] + halfW[1] * AbsR[0][2];
+	rb = otherHalfW[0] * AbsR[2][1] + otherHalfW[1] * AbsR[2][0];
+	if (abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return 1;
+
+	// there is no axis test that separates these two objects
 	return eSATResults::SAT_NONE;
 }

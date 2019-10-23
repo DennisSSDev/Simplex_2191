@@ -20,6 +20,8 @@ matrix4 Simplex::MyCamera::GetViewMatrix(void) { CalculateViewMatrix(); return m
 Simplex::MyCamera::MyCamera()
 {
 	Init(); //Init the object with default values
+
+
 }
 
 Simplex::MyCamera::MyCamera(vector3 a_v3Position, vector3 a_v3Target, vector3 a_v3Upward)
@@ -165,7 +167,6 @@ void Simplex::MyCamera::CalculateViewMatrix(void)
 	const quaternion pitchRot = glm::angleAxis(Pitch, glm::cross(glm::normalize(forward), AXIS_Y));
 	const auto OrientationY = forward * pitchRot;
 	m_v3Target =  m_v3Position + OrientationY; // apply Pitch rotation
-	
 	m_m4View = glm::lookAt(m_v3Position, m_v3Target, glm::normalize(m_v3Above - m_v3Position)); //position, target, upward
 }
 
@@ -206,6 +207,7 @@ void MyCamera::MoveVertical(float a_fDistance)
 
 void MyCamera::MoveSideways(float a_fDistance)
 {
+	
 	// move based on the forward vector cross the Y axis. This way it will retrieve the correct sideways vector 
 	const auto moveDir = glm::normalize(glm::cross(GetForwardVector(), AXIS_Y)) * -a_fDistance;
 	m_v3Position += moveDir;

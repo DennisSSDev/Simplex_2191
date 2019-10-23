@@ -225,6 +225,14 @@ public:
 	Output: ---
 	*/
 	void SetModelMatrix(matrix4 a_m4ModelMatrix);
+
+	/*
+	 Usage: Gets the Model local Axis
+	 Arguments: ---
+	 Output: ---
+	 */
+	inline std::vector<vector3> GetLocalModelAxis() const;
+	
 #pragma endregion
 	
 private:
