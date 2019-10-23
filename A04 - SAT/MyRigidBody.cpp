@@ -391,6 +391,7 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	rb = otherHalfW[0] * AbsR[2][1] + otherHalfW[1] * AbsR[2][0];
 	if (abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return 1;
 
+	
 	// there is no axis test that separates these two objects
 	return eSATResults::SAT_NONE;
 }
