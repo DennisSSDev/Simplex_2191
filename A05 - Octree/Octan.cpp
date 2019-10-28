@@ -158,7 +158,7 @@ vector3 Simplex::MyOctant::GetMaxGlobal() const
 bool Simplex::MyOctant::IsColliding(uint entityIndex) const
 {
 	const uint entityCount = entityManager->GetEntityCount();
-	if(entityIndex > entityCount)
+	if(entityIndex >= entityCount)
 	{
 		return false;
 	}
