@@ -91,7 +91,6 @@ void Application::ProcessKeyReleased(sf::Event a_event)
 
 	switch (a_event.key.code)
 	{
-	default: break;
 	case sf::Keyboard::Escape:
 		m_bRunning = false;
 		break;
@@ -111,45 +110,45 @@ void Application::ProcessKeyReleased(sf::Event a_event)
 		bFPSControl = !bFPSControl;
 		m_pCameraMngr->SetFPS(bFPSControl);
 		break;
-	case sf::Keyboard::PageUp:
+	case sf::Keyboard::Up:
 		++m_uOctantID;
-		/*
+		
 		if (m_uOctantID >= m_pRoot->GetOctantCount())
 			m_uOctantID = - 1;
-		*/
+
 		break;
-	case sf::Keyboard::PageDown:
+	case sf::Keyboard::Down:
 		--m_uOctantID;
-		/*
+		
 		if (m_uOctantID >= m_pRoot->GetOctantCount())
 			m_uOctantID = - 1;
-		*/
+	
 		break;
-	case sf::Keyboard::Add:
+	case sf::Keyboard::I:
 		if (m_uOctantLevels < 4)
 		{
 			m_pEntityMngr->ClearDimensionSetAll();
 			++m_uOctantLevels;
-			/*
+			
 			SafeDelete(m_pRoot);
 			m_pRoot = new MyOctant(m_uOctantLevels, 5);
-			*/
+			
 		}
 		break;
-	case sf::Keyboard::Subtract:
+	case sf::Keyboard::O:
 		if (m_uOctantLevels > 0)
 		{
 			m_pEntityMngr->ClearDimensionSetAll();
 			--m_uOctantLevels;
-			/*
 			SafeDelete(m_pRoot);
 			m_pRoot = new MyOctant(m_uOctantLevels, 5);
-			*/
 		}
 		break;
 	case sf::Keyboard::LShift:
 	case sf::Keyboard::RShift:
 		m_bModifier = false;
+		break;
+		default: break;
 	}
 
 	//gui
