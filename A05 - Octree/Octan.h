@@ -24,6 +24,9 @@ namespace Simplex
 		
 		//size of the octant
 		float size = 0.f;
+
+		// the transformation matrix of the Octant Box
+		matrix4 transform;
 		
 		// singleton to the mesh manager
 		MeshManager* meshManager = nullptr;
@@ -36,6 +39,7 @@ namespace Simplex
 		vector3 maxLocation = vector3(0);
 
 		MyOctant* parent = nullptr;
+		MyOctant* root = nullptr;
 
 		// up to 8 children of the current octant
 		MyOctant* child[8];
@@ -43,21 +47,22 @@ namespace Simplex
 		// list of entities under the octant
 		std::vector<uint> entityList;
 
-		MyOctant* root = nullptr;
-
 		 // list of nodes that contain objects (for root only)
 		std::vector<MyOctant*> lChild;
-
-		matrix4 transform;
 		
 	public:
+
+		///////////////////////////////////////////////////////////////
+		/// RULE OF 3, constructors and SWAP
+		///////////////////////////////////////////////////////////////
+	
 		/**
 		 * Constructor, will create an Octant containing all the Entity Instances that are within the Entity Manager
 		 *
-		 * @param maxLevel Sets the maximum level of subdivisions
-		 * @param idealEntityCount Sets the ideal number of objects per octant
+		 * @param maxLvl Sets the maximum level of subdivisions
+		 * @param idealEntityC Sets the ideal number of objects per octant
 		 */
-		MyOctant(uint maxLevel = 2, uint idealEntityCount = 5);
+		MyOctant(uint maxLvl = 2, uint idealEntityC = 5);
 
 		/**
 		 * Constructor, that will create the Octant based  on supplied center and size params
@@ -88,32 +93,50 @@ namespace Simplex
 		 * @param other the object that will swap data with the current one
 		 */
 		void Swap(MyOctant& other);
-
+		
+		////////////////////////////////////////////////////////////////////////
+		/// GETTERS
+		////////////////////////////////////////////////////////////////////////
+	
 		/**
 		 * Getter for Octant size
 		 */
-		float GetSize() const;
+		inline float GetSize() const;
 
 		/**
 		 * Getter for the center of the octant in global space
 		 */
-		vector3 GetCenterGlobal() const;
+		inline vector3 GetCenterGlobal() const;
 
 		/**
 		 * Getter for the Octant's Min in global space
 		 */
-		vector3 GetMinGlobal() const;
+		inline vector3 GetMinGlobal() const;
 
 		/**
 		 * Getter for the Octant's Max in global space
 		 */
-		vector3 GetMaxGlobal() const;
+		inline vector3 GetMaxGlobal() const;
 
 		/**
-		 * Helper function to check if the Octant is colliding with the entity
+		 * Getter for the Octant child bound by the index
 		 */
-		bool IsColliding(uint entityIndex) const;
+		inline MyOctant* GetChild(uint childIndex) const;
 
+		/**
+		 * Getter for the Parent Octant if any
+		 */
+		inline MyOctant* GetParent() const;
+
+		/**
+		 * Gets the total number of Octants in the world
+		 */
+		uint GetOctantCount() const;
+
+		////////////////////////////////////////////////////////////////
+		/// DISPLAYING THE OCTANT
+		///////////////////////////////////////////////////////////////
+		
 		/**
 		 * Display the Octant Volume specified by the index including the objects underneath
 		 */
@@ -124,10 +147,14 @@ namespace Simplex
 		 */
 		void Display(vector3 color = C_YELLOW);
 
+		//////////////////////////////////////////////////////////////
+		/// OCTREE CONSTRUCTION
+		/////////////////////////////////////////////////////////////
+
 		/**
-		 * Removes the entities for each node
+		 * Creates tree using subdivisions according to the max number of levels
 		 */
-		void ClearEntityList();
+		void ConstructTree(uint maxLvl = 3);
 
 		/**
 		 * Allocate 8 smaller Octants in the child pointer
@@ -135,39 +162,33 @@ namespace Simplex
 		void Subdivide();
 
 		/**
-		 * Getter for the Octant child bound by the index
-		 */
-		MyOctant* GetChild(uint childIndex);
-
-		/**
-		 * Getter for the Parent Octant if any
-		 */
-		MyOctant* GetParent();
-
-		/**
 		 * Helper that determines if the Octant contains more than the specified number of entities
 		 */
-		bool ContainsMoreThan(uint entityCount);
+		bool ContainsMoreThan(uint entityCount) const;
 
 		/**
-		 * Deletes all the child nodes including their leaves
+		 * Helper function to check if the Octant is colliding with the entity within the entity manager
 		 */
-		void KillBranches();
-
-		/**
-		 * Creates tree using subdivisions according to the max number of levels
-		 */
-		void ConstructTree(uint maxLevel = 3);
+		inline bool IsColliding(uint entityIndex) const;
 
 		/**
 		 * Helper that traverses the tree to the leafs and sets the entities inside to the appropriate index
 		 */
 		void AssignIDtoEntity();
 
+		////////////////////////////////////////////////////////////////
+		/// OCTREE INVALIDATION
+		///////////////////////////////////////////////////////////////
+
 		/**
-		 * Gets the total number of Octants in the world
+		 * Removes the entities for each node
 		 */
-		uint GetOctantCount();
+		void ClearEntityList();
+
+		/**
+		 * Deletes all the child nodes including their leaves
+		 */
+		void KillBranches();
 
 	private:
 		/**

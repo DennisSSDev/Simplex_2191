@@ -10,30 +10,33 @@ uint Simplex::MyOctant::idealEntityCount = 5;
 Simplex::MyOctant::MyOctant(uint maxLvl, uint idealEntityC)
 {
 	Init();
-	
-	octantCount = 0;
-	maxLevel = maxLvl;
-	idealEntityCount = idealEntityC;
-	ID = octantCount;
 
 	root = this;
+	
+	octantCount = 0;
+	
+	maxLevel = maxLvl;
+	idealEntityCount = idealEntityC;
+	
+	ID = octantCount;
+
 	lChild.clear();
 
-	std::vector<vector3> minMax;
 	const uint numberOfObjects = entityManager->GetEntityCount();
+	std::vector<vector3> minMax;
 	for (uint i = 0; i < numberOfObjects; i++)
 	{
-		const auto entity = entityManager->GetEntity(i);
-		const auto rigidBody = entity->GetRigidBody();
+		const auto& entity = entityManager->GetEntity(i);
+		const auto& rigidBody = entity->GetRigidBody();
 
 		minMax.push_back(rigidBody->GetMinGlobal());
 		minMax.push_back(rigidBody->GetMaxGlobal());
 	}
 	
-	// hack to get the correct dimensions for the big boi Octan (first ever) without having to find the min and max myself
+	// hack to get the correct dimensions for the big boi Octant (first ever) without having to find the min and max myself
 	auto rb = new MyRigidBody(minMax);
 	
-	vector3 halfWidth = rb->GetHalfWidth();
+	const vector3 halfWidth = rb->GetHalfWidth();
 
 	float max = halfWidth.x;
 	for (uint i = 1; i < 3; i++)
@@ -45,9 +48,8 @@ Simplex::MyOctant::MyOctant(uint maxLvl, uint idealEntityC)
 	}
 	vector3 rbCenter = rb->GetCenterLocal();
 
-	// invalidate the rb. it's unneeded now
+	// invalidate the rb. it's not needed now
 	SafeDelete(rb);
-	rb = nullptr;
 	
 	size = max * 2.f;
 	center = rbCenter;
@@ -56,6 +58,7 @@ Simplex::MyOctant::MyOctant(uint maxLvl, uint idealEntityC)
 	maxLocation = center + vector3(max);
 
 	transform = (glm::translate(IDENTITY_M4, center) * glm::scale(vector3(size)));
+	
 	octantCount++;
 
 	ConstructTree(maxLevel);
@@ -75,18 +78,22 @@ Simplex::MyOctant::MyOctant(vector3 centerV, float sizeF)
 
 Simplex::MyOctant::MyOctant(const MyOctant& other)
 {
+	meshManager = MeshManager::GetInstance();
+	entityManager = MyEntityManager::GetInstance();
+	
+	parent = other.parent;
+	root = other.root;
+	
+	level = other.level;
+	lChild = other.lChild;
 	childrenCount = other.childrenCount;
+	
 	center = other.center;
 	minLocation = other.minLocation;
 	maxLocation = other.maxLocation;
+	
 	size = other.size;
 	ID = other.ID;
-	level = other.level;
-	parent = other.parent;
-	root = other.root;
-	lChild = other.lChild;
-	meshManager = MeshManager::GetInstance();
-	entityManager = MyEntityManager::GetInstance();
 
 	for (uint i = 0; i < 8; i++)
 	{
@@ -135,27 +142,27 @@ void Simplex::MyOctant::Swap(MyOctant& other)
 	}
 }
 
-float Simplex::MyOctant::GetSize() const
+inline float Simplex::MyOctant::GetSize() const
 {
 	return size;
 }
 
-vector3 Simplex::MyOctant::GetCenterGlobal() const
+inline vector3 Simplex::MyOctant::GetCenterGlobal() const
 {
 	return center;
 }
 
-vector3 Simplex::MyOctant::GetMinGlobal() const
+inline vector3 Simplex::MyOctant::GetMinGlobal() const
 {
 	return minLocation;
 }
 
-vector3 Simplex::MyOctant::GetMaxGlobal() const
+inline vector3 Simplex::MyOctant::GetMaxGlobal() const
 {
 	return maxLocation;
 }
 
-bool Simplex::MyOctant::IsColliding(uint entityIndex) const
+inline bool Simplex::MyOctant::IsColliding(uint entityIndex) const
 {
 	const uint entityCount = entityManager->GetEntityCount();
 	if(entityIndex >= entityCount)
@@ -164,7 +171,7 @@ bool Simplex::MyOctant::IsColliding(uint entityIndex) const
 	}
 	
 	// JUST DO AABB
-	const auto rb = entityManager->GetEntity(entityIndex)->GetRigidBody();
+	const auto& rb = entityManager->GetEntity(entityIndex)->GetRigidBody();
 	
 	const vector3 min = rb->GetMinGlobal();
 	const vector3 max = rb->GetMaxGlobal();
@@ -212,7 +219,7 @@ void Simplex::MyOctant::Display(uint index, vector3 color)
 			meshManager->AddWireCubeToRenderList(node->transform, color, RENDER_WIRE);
 		}
 		octStack.pop();
-		for (uint i = 0; i < node->childrenCount; i++)
+		for (uint i = 0; i < node->childrenCount; ++i)
 		{
 			octStack.push(node->child[i]);
 		}
@@ -240,22 +247,24 @@ void Simplex::MyOctant::Display(vector3 color)
 		meshManager->AddWireCubeToRenderList(node->transform, color, RENDER_WIRE);
 		
 		octStack.pop();
-		for (uint i = 0; i < node->childrenCount; i++)
+		for (uint i = 0; i < node->childrenCount; ++i)
 		{
 			octStack.push(node->child[i]);
 		}
 	}
 }
 
+// ok to be recursive as it's done once during the creation of the octree
 void Simplex::MyOctant::ClearEntityList()
 {
-	for (uint i = 0; i < childrenCount; i++)
+	for (uint i = 0; i < childrenCount; ++i)
 	{
 		child[i]->ClearEntityList();
 	}
 	entityList.clear();
 }
 
+// ok to be recursive as it's done once during the creation of the octree
 void Simplex::MyOctant::Subdivide()
 {
 	if(level >= maxLevel)
@@ -264,10 +273,10 @@ void Simplex::MyOctant::Subdivide()
 	if(childrenCount != 0)
 		return;
 
-	childrenCount = 8;
-
 	const float subdivSize = size / 4.f;
 	const float childSize = subdivSize * 2.f;
+
+	childrenCount = 8;
 	
 	vector3 childCenter = center - vector3(subdivSize);
 
@@ -312,8 +321,8 @@ void Simplex::MyOctant::Subdivide()
 	
 	for (auto& mem : child)
 	{
-		mem->root = root;
 		mem->parent = this;
+		mem->root = root;
 		mem->level = level + 1;
 		if(mem->ContainsMoreThan(idealEntityCount))
 		{
@@ -322,17 +331,17 @@ void Simplex::MyOctant::Subdivide()
 	}
 }
 
-MyOctant* Simplex::MyOctant::GetChild(uint childIndex)
+inline MyOctant* Simplex::MyOctant::GetChild(uint childIndex) const
 {
 	return childIndex > 7 ? nullptr : this->child[childIndex]; 
 }
 
-MyOctant* Simplex::MyOctant::GetParent()
+inline MyOctant* Simplex::MyOctant::GetParent() const
 {
 	return parent;
 }
 
-bool Simplex::MyOctant::ContainsMoreThan(uint entityCount)
+bool Simplex::MyOctant::ContainsMoreThan(uint entityCount) const
 {
 	uint count = 0;
 	const uint localEntityCount = entityManager->GetEntityCount();
@@ -405,7 +414,20 @@ void Simplex::MyOctant::AssignIDtoEntity()
 	}
 }
 
-uint Simplex::MyOctant::GetOctantCount()
+void Simplex::MyOctant::ConstructList()
+{
+	for (uint i = 0; i < childrenCount; i++)
+	{
+		child[i]->ConstructList();
+	}
+
+	if(!entityList.empty())
+	{
+		root->lChild.push_back(this);
+	}
+}
+
+uint Simplex::MyOctant::GetOctantCount() const
 {
 	return octantCount;
 }
@@ -442,18 +464,5 @@ void Simplex::MyOctant::Init()
 	for (auto ch : child)
 	{
 		ch = nullptr;
-	}
-}
-
-void Simplex::MyOctant::ConstructList()
-{
-	for (uint i = 0; i < childrenCount; i++)
-	{
-		child[i]->ConstructList();
-	}
-
-	if(!entityList.empty())
-	{
-		root->lChild.push_back(this);
 	}
 }
